@@ -1,24 +1,24 @@
-import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeftRight, Plus, X, Save, Calendar } from 'lucide-react';
+import React, { useState, useEffect } from "react";
+import { useParams, useNavigate } from "react-router-dom";
+import { ArrowLeftRight, Plus, X, Save, Calendar } from "lucide-react";
 import type { Team, DayOfWeek } from "../types";
-import { apiClient } from '../lib/api';
+import { apiClient } from "../lib/api";
 import {
   getCurrentWeekNumber,
   getPresenterForWeek,
   getWeekStartDate,
   formatDate,
   formatDayOfWeek,
-} from '../utils';
+} from "../utils";
 
 const daysOfWeek: { value: DayOfWeek; label: string }[] = [
-  { value: 0, label: 'Sunday' },
-  { value: 1, label: 'Monday' },
-  { value: 2, label: 'Tuesday' },
-  { value: 3, label: 'Wednesday' },
-  { value: 4, label: 'Thursday' },
-  { value: 5, label: 'Friday' },
-  { value: 6, label: 'Saturday' },
+  { value: 0, label: "Sunday" },
+  { value: 1, label: "Monday" },
+  { value: 2, label: "Tuesday" },
+  { value: 3, label: "Wednesday" },
+  { value: 4, label: "Thursday" },
+  { value: 5, label: "Friday" },
+  { value: 6, label: "Saturday" },
 ];
 
 export default function TeamBoard() {
@@ -27,15 +27,15 @@ export default function TeamBoard() {
   const [team, setTeam] = useState<Team | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  
+
   const [swapMode, setSwapMode] = useState(false);
   const [selectedForSwap, setSelectedForSwap] = useState<string | null>(null);
   const [isEditing, setIsEditing] = useState(false);
-  const [newPresenterName, setNewPresenterName] = useState('');
+  const [newPresenterName, setNewPresenterName] = useState("");
 
   useEffect(() => {
     if (!teamId) {
-      navigate('/create');
+      navigate("/create");
       return;
     }
 
@@ -45,7 +45,7 @@ export default function TeamBoard() {
         const members = await apiClient.getTeamMembers(teamId);
 
         if (!members || members.length === 0) {
-          navigate('/create');
+          navigate("/create");
           return;
         }
 
@@ -61,12 +61,12 @@ export default function TeamBoard() {
           ),
         });
       } catch (err) {
-        console.error('Error loading team:', err);
-        if (err instanceof Error && err.message.includes('404')) {
-          navigate('/create');
+        console.error("Error loading team:", err);
+        if (err instanceof Error && err.message.includes("404")) {
+          navigate("/create");
           return;
         }
-        setError('Failed to load team data');
+        setError("Failed to load team data");
       } finally {
         setIsLoading(false);
       }
@@ -82,8 +82,8 @@ export default function TeamBoard() {
       await apiClient.updateTeamPresentationDay(team.id, day);
       setTeam({ ...team, presentationDay: day });
     } catch (err) {
-      console.error('Error updating presentation day:', err);
-      alert('Failed to update presentation day');
+      console.error("Error updating presentation day:", err);
+      alert("Failed to update presentation day");
     }
   };
 
@@ -96,28 +96,46 @@ export default function TeamBoard() {
       return;
     }
 
-    if (selectedForSwap === null) return;
+    if (selectedForSwap === null || selectedForSwap === presenterId) {
+      setSwapMode(false);
+      setSelectedForSwap(null);
+      return;
+    }
 
     try {
-      const member1 = team.members.find(m => m.id === selectedForSwap);
-      const member2 = team.members.find(m => m.id === presenterId);
+      const member1 = team.members.find((m) => m.id === selectedForSwap);
+      const member2 = team.members.find((m) => m.id === presenterId);
 
-      if (!member1 || !member2) return;
+      if (!member1 || !member2) {
+        throw new Error("Cannot find members to swap");
+      }
 
+      // Perform the swap on the backend
       await apiClient.bulkUpdateMemberPositions([
         { id: member1.id, position: member2.position },
-        { id: member2.id, position: member1.position }
+        { id: member2.id, position: member1.position },
       ]);
 
-      const newMembers = [...team.members];
-      const index1 = team.members.findIndex(m => m.id === selectedForSwap);
-      const index2 = team.members.findIndex(m => m.id === presenterId);
-      [newMembers[index1], newMembers[index2]] = [newMembers[index2], newMembers[index1]];
+      // Update the local state
+      const newMembers = team.members.map((member) => {
+        if (member.id === member1.id) {
+          return { ...member, position: member2.position };
+        } else if (member.id === member2.id) {
+          return { ...member, position: member1.position };
+        }
+        return member;
+      });
+
+      // Sort by position to maintain order
+      newMembers.sort((a, b) => a.position - b.position);
 
       setTeam({ ...team, members: newMembers });
     } catch (err) {
-      console.error('Error swapping members:', err);
-      alert('Failed to swap team members');
+      console.error("Error swapping members:", err);
+      alert(
+        "Failed to swap team members: " +
+          (err instanceof Error ? err.message : "Unknown error")
+      );
     } finally {
       setSwapMode(false);
       setSelectedForSwap(null);
@@ -128,25 +146,32 @@ export default function TeamBoard() {
     if (!team || !newPresenterName.trim()) return;
 
     try {
-      const newMember = await apiClient.createTeamMember(team.id, newPresenterName.trim(), team.members.length);
+      const newMember = await apiClient.createTeamMember(
+        team.id,
+        newPresenterName.trim(),
+        team.members.length
+      );
 
       setTeam({
         ...team,
-        members: [...team.members, {
-          id: newMember.id,
-          name: newMember.name,
-          position: newMember.position
-        }]
+        members: [
+          ...team.members,
+          {
+            id: newMember.id,
+            name: newMember.name,
+            position: newMember.position,
+          },
+        ],
       });
-      setNewPresenterName('');
+      setNewPresenterName("");
     } catch (err) {
-      console.error('Error adding team member:', err);
-      alert('Failed to add team member');
+      console.error("Error adding team member:", err);
+      alert("Failed to add team member");
     }
   };
 
   const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter' && newPresenterName.trim()) {
+    if (e.key === "Enter" && newPresenterName.trim()) {
       e.preventDefault();
       addPresenter();
     }
@@ -156,7 +181,7 @@ export default function TeamBoard() {
     if (!team) return;
 
     if (team.members.length <= 2) {
-      alert('Cannot remove presenter. Minimum 2 presenters required.');
+      alert("Cannot remove presenter. Minimum 2 presenters required.");
       return;
     }
 
@@ -164,21 +189,21 @@ export default function TeamBoard() {
       await apiClient.deleteTeamMember(id);
 
       const newMembers = team.members
-        .filter(m => m.id !== id)
+        .filter((m) => m.id !== id)
         .map((m, idx) => ({ ...m, position: idx }));
 
       // Update positions for remaining members
       await apiClient.bulkUpdateMemberPositions(
-        newMembers.map(m => ({
+        newMembers.map((m) => ({
           id: m.id,
-          position: m.position
+          position: m.position,
         }))
       );
 
       setTeam({ ...team, members: newMembers });
     } catch (err) {
-      console.error('Error removing team member:', err);
-      alert('Failed to remove team member');
+      console.error("Error removing team member:", err);
+      alert("Failed to remove team member");
     }
   };
 
@@ -202,7 +227,10 @@ export default function TeamBoard() {
 
   const currentWeek = getCurrentWeekNumber();
   const currentPresenter = getPresenterForWeek(team.members, currentWeek);
-  const upcomingWeeks = Array.from({ length: 5 }, (_, i) => currentWeek + i + 1);
+  const upcomingWeeks = Array.from(
+    { length: 5 },
+    (_, i) => currentWeek + i + 1
+  );
 
   return (
     <div className="min-h-screen bg-yellow-100 py-8 px-4">

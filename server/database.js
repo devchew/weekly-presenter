@@ -111,14 +111,43 @@ const teamMemberOperations = {
   },
 
   bulkUpdatePositions: (members, callback) => {
-    db.serialize(() => {
-      const stmt = db.prepare('UPDATE team_members SET position = ? WHERE id = ?');
-      
-      for (const member of members) {
-        stmt.run(member.position, member.id);
+    db.run("BEGIN TRANSACTION", (err) => {
+      if (err) {
+        return callback(err);
       }
-      
-      stmt.finalize(callback);
+
+      const stmt = db.prepare(
+        "UPDATE team_members SET position = ? WHERE id = ?"
+      );
+      let completed = 0;
+      let hasError = false;
+
+      if (members.length === 0) {
+        db.run("COMMIT", callback);
+        return;
+      }
+
+      for (const member of members) {
+        stmt.run(member.position, member.id, function (err) {
+          if (err && !hasError) {
+            hasError = true;
+            stmt.finalize();
+            db.run("ROLLBACK", () => callback(err));
+            return;
+          }
+
+          completed++;
+          if (completed === members.length && !hasError) {
+            stmt.finalize((err) => {
+              if (err) {
+                db.run("ROLLBACK", () => callback(err));
+              } else {
+                db.run("COMMIT", callback);
+              }
+            });
+          }
+        });
+      }
     });
   }
 };
