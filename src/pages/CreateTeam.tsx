@@ -74,21 +74,26 @@ export default function CreateTeam() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 py-8 px-4">
+    <div className="min-h-screen bg-yellow-100 py-8 px-4">
       <div className="max-w-2xl mx-auto">
-        <div className="bg-white rounded-lg shadow-md p-6">
+        <div className="neo-card">
           <div className="flex justify-between items-center mb-6">
-            <h1 className="text-2xl font-bold text-gray-800">Create New Team</h1>
+            <h1 className="text-3xl font-black text-black">Create New Team</h1>
           </div>
 
           <div className="mb-8">
-            <h2 className="text-lg font-semibold text-gray-700 mb-4">Presentation Day</h2>
+            <h2 className="text-xl font-bold text-black mb-4">
+              Presentation Day
+            </h2>
             <select
               value={presentationDay}
-              onChange={(e) => setPresentationDay(Number(e.target.value) as DayOfWeek)}
-              className="w-full px-3 py-2 border rounded-md bg-white"
+              onChange={(e) =>
+                setPresentationDay(Number(e.target.value) as DayOfWeek)
+              }
+              className="neo-select w-full"
+              aria-label="Select presentation day"
             >
-              {daysOfWeek.map(day => (
+              {daysOfWeek.map((day) => (
                 <option key={day.value} value={day.value}>
                   {day.label}
                 </option>
@@ -98,7 +103,7 @@ export default function CreateTeam() {
 
           <div className="space-y-3">
             <div className="flex justify-between items-center">
-              <h2 className="text-lg font-semibold text-gray-700">Team Members</h2>
+              <h2 className="text-xl font-bold text-black">Team Members</h2>
               <div className="flex gap-2 items-center">
                 <input
                   type="text"
@@ -106,31 +111,28 @@ export default function CreateTeam() {
                   onChange={(e) => setNewPresenterName(e.target.value)}
                   onKeyPress={handleKeyPress}
                   placeholder="New team member name"
-                  className="px-3 py-2 border rounded-md"
+                  className="neo-input"
                 />
                 <button
                   onClick={addPresenter}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+                  className="neo-button-primary"
+                  aria-label="Add presenter"
                 >
-                  <Plus className="w-4 h-4" />
+                  <Plus className="w-5 h-5" />
                 </button>
               </div>
             </div>
 
             {presenters.map((presenter, index) => (
-              <div
-                key={index}
-                className="flex items-center justify-between p-3 rounded-md bg-gray-50"
-              >
+              <div key={index} className="neo-member-card">
                 <div className="flex items-center gap-3">
-                  <span className="w-8 h-8 flex items-center justify-center bg-gray-200 rounded-full">
-                    {index + 1}
-                  </span>
-                  <span className="font-medium">{presenter.name}</span>
+                  <span className="neo-badge">{index + 1}</span>
+                  <span className="font-bold text-black">{presenter.name}</span>
                 </div>
                 <button
                   onClick={() => removePresenter(presenter.position)}
-                  className="p-1 text-red-600 hover:bg-red-100 rounded-full transition-colors"
+                  className="neo-button-danger p-2"
+                  aria-label={`Remove ${presenter.name}`}
                 >
                   <X className="w-5 h-5" />
                 </button>
@@ -142,10 +144,14 @@ export default function CreateTeam() {
             <button
               onClick={createTeam}
               disabled={isCreating || presenters.length < 2}
-              className="px-6 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+              className={
+                isCreating || presenters.length < 2
+                  ? "neo-button-disabled"
+                  : "neo-button-secondary"
+              }
             >
-              <Save className="w-4 h-4" />
-              {isCreating ? 'Creating...' : 'Create Team'}
+              <Save className="w-5 h-5 mr-2" />
+              {isCreating ? "Creating..." : "Create Team"}
             </button>
           </div>
         </div>

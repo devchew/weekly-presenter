@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeftRight, Plus, X, Save, Calendar } from 'lucide-react';
-import type { Team, Presenter, DayOfWeek } from '../types';
+import type { Team, DayOfWeek } from "../types";
 import { apiClient } from '../lib/api';
 import {
   getCurrentWeekNumber,
@@ -52,11 +52,13 @@ export default function TeamBoard() {
         setTeam({
           id: teamData.id,
           presentationDay: teamData.presentation_day,
-          members: members.map((m: any) => ({
-            id: m.id,
-            name: m.name,
-            position: m.position
-          }))
+          members: members.map(
+            (m: { id: string; name: string; position: number }) => ({
+              id: m.id,
+              name: m.name,
+              position: m.position,
+            })
+          ),
         });
       } catch (err) {
         console.error('Error loading team:', err);
@@ -182,16 +184,18 @@ export default function TeamBoard() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
-        <div className="text-xl text-gray-600">Loading...</div>
+      <div className="min-h-screen bg-yellow-100 flex items-center justify-center">
+        <div className="text-2xl font-bold text-black">Loading...</div>
       </div>
     );
   }
 
   if (error || !team) {
     return (
-      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
-        <div className="text-xl text-red-600">{error || 'Team not found'}</div>
+      <div className="min-h-screen bg-yellow-100 flex items-center justify-center">
+        <div className="text-2xl font-bold text-red-600">
+          {error || "Team not found"}
+        </div>
       </div>
     );
   }
@@ -201,20 +205,25 @@ export default function TeamBoard() {
   const upcomingWeeks = Array.from({ length: 5 }, (_, i) => currentWeek + i + 1);
 
   return (
-    <div className="min-h-screen bg-gray-100 py-8 px-4">
+    <div className="min-h-screen bg-yellow-100 py-8 px-4">
       <div className="max-w-2xl mx-auto">
-        <div className="bg-white rounded-lg shadow-md p-6">
+        <div className="neo-card">
           <div className="flex justify-between items-center mb-6">
-            <h1 className="text-2xl font-bold text-gray-800">Weekly Status Presenter</h1>
+            <h1 className="text-3xl font-black text-black">
+              Weekly Status Presenter
+            </h1>
             <div className="flex items-center gap-4">
               <div className="flex items-center gap-2">
-                <Calendar className="w-5 h-5 text-gray-600" />
+                <Calendar className="w-6 h-6 text-black" />
                 <select
                   value={team.presentationDay}
-                  onChange={(e) => handleDayChange(Number(e.target.value) as DayOfWeek)}
-                  className="px-3 py-2 border rounded-md bg-white"
+                  onChange={(e) =>
+                    handleDayChange(Number(e.target.value) as DayOfWeek)
+                  }
+                  className="neo-select"
+                  aria-label="Select presentation day"
                 >
-                  {daysOfWeek.map(day => (
+                  {daysOfWeek.map((day) => (
                     <option key={day.value} value={day.value}>
                       {day.label}
                     </option>
@@ -223,64 +232,79 @@ export default function TeamBoard() {
               </div>
               <button
                 onClick={() => setIsEditing(!isEditing)}
-                className={`px-4 py-2 rounded-md transition-colors flex items-center gap-2 ${
-                  isEditing 
-                    ? 'bg-green-600 text-white hover:bg-green-700'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                }`}
+                className={
+                  isEditing ? "neo-button-secondary" : "neo-button-primary"
+                }
               >
-                {isEditing ? <Save className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
-                {isEditing ? 'Save List' : 'Edit List'}
+                {isEditing ? (
+                  <Save className="w-5 h-5 mr-2" />
+                ) : (
+                  <Plus className="w-5 h-5 mr-2" />
+                )}
+                {isEditing ? "Save List" : "Edit List"}
               </button>
-            </div>
-          </div>
-          
-          <div className="mb-8 p-4 bg-blue-50 rounded-lg">
-            <h2 className="text-lg font-semibold text-gray-700 mb-2">
-              Current Week
-            </h2>
-            <div className="flex items-center justify-between bg-white p-4 rounded-md shadow-sm">
-              <div>
-                <p className="text-sm text-gray-500">
-                  {formatDayOfWeek(getWeekStartDate(currentWeek, team.presentationDay))}, {' '}
-                  {formatDate(getWeekStartDate(currentWeek, team.presentationDay))}
-                </p>
-                <p className="text-xl font-bold text-blue-600">{currentPresenter.name}</p>
-              </div>
-              {swapMode ? (
-                <button
-                  onClick={() => {
-                    setSwapMode(false);
-                    setSelectedForSwap(null);
-                  }}
-                  className="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 transition-colors"
-                >
-                  Cancel Swap
-                </button>
-              ) : (
-                <button
-                  onClick={() => handleSwap(currentPresenter.id)}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
-                >
-                  Swap Presenter
-                </button>
-              )}
             </div>
           </div>
 
           <div className="mb-8">
-            <h3 className="text-lg font-semibold text-gray-700 mb-3">Upcoming Presentations</h3>
-            <div className="space-y-2">
-              {upcomingWeeks.map(week => {
+            <h2 className="text-xl font-bold text-black mb-4">Current Week</h2>
+            <div className="neo-current-presenter">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-bold text-black mb-1">
+                    {formatDayOfWeek(
+                      getWeekStartDate(currentWeek, team.presentationDay)
+                    )}
+                    ,{" "}
+                    {formatDate(
+                      getWeekStartDate(currentWeek, team.presentationDay)
+                    )}
+                  </p>
+                  <p className="text-2xl font-black text-black">
+                    {currentPresenter.name}
+                  </p>
+                </div>
+                {swapMode ? (
+                  <button
+                    onClick={() => {
+                      setSwapMode(false);
+                      setSelectedForSwap(null);
+                    }}
+                    className="neo-button-danger"
+                  >
+                    Cancel Swap
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => handleSwap(currentPresenter.id)}
+                    className="neo-button-primary"
+                  >
+                    Swap Presenter
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+
+          <div className="mb-8">
+            <h3 className="text-xl font-bold text-black mb-4">
+              Upcoming Presentations
+            </h3>
+            <div className="space-y-3">
+              {upcomingWeeks.map((week) => {
                 const presenter = getPresenterForWeek(team.members, week);
                 const date = getWeekStartDate(week, team.presentationDay);
                 return (
-                  <div key={week} className="bg-gray-50 p-3 rounded-md flex justify-between items-center">
-                    <div>
-                      <p className="text-sm text-gray-500">
-                        {formatDayOfWeek(date)}, {formatDate(date)}
-                      </p>
-                      <p className="font-medium text-gray-800">{presenter.name}</p>
+                  <div key={week} className="neo-upcoming-card">
+                    <div className="flex justify-between items-center">
+                      <div>
+                        <p className="text-sm font-bold text-black mb-1">
+                          {formatDayOfWeek(date)}, {formatDate(date)}
+                        </p>
+                        <p className="text-lg font-bold text-black">
+                          {presenter.name}
+                        </p>
+                      </div>
                     </div>
                   </div>
                 );
@@ -290,7 +314,9 @@ export default function TeamBoard() {
 
           <div className="space-y-3">
             <div className="flex justify-between items-center">
-              <h3 className="text-lg font-semibold text-gray-700">Presentation Order</h3>
+              <h3 className="text-xl font-bold text-black">
+                Presentation Order
+              </h3>
               {isEditing && (
                 <div className="flex gap-2 items-center">
                   <input
@@ -299,12 +325,9 @@ export default function TeamBoard() {
                     onChange={(e) => setNewPresenterName(e.target.value)}
                     onKeyPress={handleKeyPress}
                     placeholder="New presenter name"
-                    className="px-3 py-2 border rounded-md"
+                    className="neo-input"
                   />
-                  <button
-                    onClick={addPresenter}
-                    className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
-                  >
+                  <button onClick={addPresenter} className="neo-button-primary">
                     Add
                   </button>
                 </div>
@@ -313,24 +336,26 @@ export default function TeamBoard() {
             {team.members.map((presenter, index) => (
               <div
                 key={presenter.id}
-                className={`flex items-center justify-between p-3 rounded-md transition-colors ${
+                className={
                   selectedForSwap === presenter.id
-                    ? 'bg-blue-100'
+                    ? "neo-member-card-selected"
                     : swapMode
-                    ? 'bg-gray-50 hover:bg-blue-50 cursor-pointer'
-                    : 'bg-gray-50'
-                }`}
-                onClick={() => swapMode && selectedForSwap !== presenter.id && handleSwap(presenter.id)}
+                    ? "neo-member-card-swap"
+                    : "neo-member-card"
+                }
+                onClick={() =>
+                  swapMode &&
+                  selectedForSwap !== presenter.id &&
+                  handleSwap(presenter.id)
+                }
               >
                 <div className="flex items-center gap-3">
-                  <span className="w-8 h-8 flex items-center justify-center bg-gray-200 rounded-full">
-                    {index + 1}
-                  </span>
-                  <span className="font-medium">{presenter.name}</span>
+                  <span className="neo-badge">{index + 1}</span>
+                  <span className="font-bold text-black">{presenter.name}</span>
                 </div>
                 <div className="flex items-center gap-2">
                   {swapMode && selectedForSwap === presenter.id && (
-                    <ArrowLeftRight className="w-5 h-5 text-blue-600" />
+                    <ArrowLeftRight className="w-6 h-6 text-black" />
                   )}
                   {isEditing && (
                     <button
@@ -338,7 +363,8 @@ export default function TeamBoard() {
                         e.stopPropagation();
                         removePresenter(presenter.id);
                       }}
-                      className="p-1 text-red-600 hover:bg-red-100 rounded-full transition-colors"
+                      className="neo-button-danger p-2"
+                      aria-label={`Remove ${presenter.name}`}
                     >
                       <X className="w-5 h-5" />
                     </button>

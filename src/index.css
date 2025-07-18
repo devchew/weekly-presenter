@@ -1,3 +1,76 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Neo-brutalism base styles */
+body {
+  @apply bg-yellow-100 font-bold;
+}
+
+/* Neo-brutalism component styles */
+.neo-button {
+  @apply px-6 py-3 bg-white border-2 border-black rounded-md font-bold text-black 
+         transition-all duration-200 hover:shadow-[4px_4px_0px_rgba(0,0,0,1)] 
+         hover:translate-x-[-2px] hover:translate-y-[-2px] active:shadow-none 
+         active:translate-x-0 active:translate-y-0;
+}
+
+.neo-button-primary {
+  @apply neo-button bg-blue-400 hover:bg-blue-300;
+}
+
+.neo-button-secondary {
+  @apply neo-button bg-green-400 hover:bg-green-300;
+}
+
+.neo-button-danger {
+  @apply neo-button bg-red-400 hover:bg-red-300;
+}
+
+.neo-button-disabled {
+  @apply neo-button bg-gray-300 cursor-not-allowed opacity-50;
+}
+
+.neo-card {
+  @apply bg-white border-2 border-black rounded-lg shadow-[4px_4px_0px_rgba(0,0,0,1)] p-6;
+}
+
+.neo-input {
+  @apply px-4 py-3 border-2 border-black rounded-md font-bold bg-white 
+         focus:outline-none focus:shadow-[2px_2px_0px_rgba(0,0,0,1)] 
+         focus:translate-x-[-1px] focus:translate-y-[-1px];
+}
+
+.neo-select {
+  @apply px-4 py-3 border-2 border-black rounded-md font-bold bg-white 
+         focus:outline-none focus:shadow-[2px_2px_0px_rgba(0,0,0,1)] 
+         focus:translate-x-[-1px] focus:translate-y-[-1px];
+}
+
+.neo-member-card {
+  @apply flex items-center justify-between p-4 bg-pink-300 border-2 border-black 
+         rounded-md transition-all duration-200 hover:shadow-[2px_2px_0px_rgba(0,0,0,1)] 
+         hover:translate-x-[-1px] hover:translate-y-[-1px];
+}
+
+.neo-member-card-swap {
+  @apply neo-member-card bg-orange-300 cursor-pointer;
+}
+
+.neo-member-card-selected {
+  @apply neo-member-card bg-purple-300;
+}
+
+.neo-current-presenter {
+  @apply p-6 bg-cyan-300 border-2 border-black rounded-lg 
+         shadow-[6px_6px_0px_rgba(0,0,0,1)];
+}
+
+.neo-upcoming-card {
+  @apply p-4 bg-yellow-300 border-2 border-black rounded-md;
+}
+
+.neo-badge {
+  @apply w-10 h-10 flex items-center justify-center bg-black text-white 
+         rounded-full font-bold border-2 border-black;
+}
