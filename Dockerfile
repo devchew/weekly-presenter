@@ -25,7 +25,7 @@ COPY ./package.json /app/
 COPY --from=build /app/dist /app/dist
 
 # Install only production dependencies
-RUN npm ci --only=production
+RUN npm ci --production
 
 # Create directory for SQLite database
 RUN mkdir -p /app/data
