@@ -24,12 +24,13 @@ RUN apk add --no-cache wget
 # Copy server files
 COPY ./server /app/server
 COPY ./package.json /app/
+COPY ./package-lock.json /app/
 
 # Copy built frontend
 COPY --from=build /app/dist /app/dist
 
 # Install only production dependencies
-RUN npm ci
+RUN cd /app/ && npm ci --production
 
 # Create directory for SQLite database
 RUN mkdir -p /app/data
