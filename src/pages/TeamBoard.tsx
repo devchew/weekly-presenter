@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeftRight, Plus, X, Save, Calendar } from 'lucide-react';
 import type { Team, Presenter, DayOfWeek } from '../types';
-import { supabase } from '../lib/supabase';
+import { apiClient } from '../lib/api';
 import {
   getCurrentWeekNumber,
   getPresenterForWeek,
@@ -41,28 +41,8 @@ export default function TeamBoard() {
 
     const loadTeam = async () => {
       try {
-        const { data: teamData, error: teamError } = await supabase
-          .from('teams')
-          .select('*')
-          .eq('id', teamId)
-          .single();
-
-        if (teamError) {
-          if (teamError.code === 'PGRST116') {
-            // Team not found
-            navigate('/create');
-            return;
-          }
-          throw teamError;
-        }
-
-        const { data: members, error: membersError } = await supabase
-          .from('team_members')
-          .select('*')
-          .eq('team_id', teamId)
-          .order('position');
-
-        if (membersError) throw membersError;
+        const teamData = await apiClient.getTeam(teamId);
+        const members = await apiClient.getTeamMembers(teamId);
 
         if (!members || members.length === 0) {
           navigate('/create');
@@ -72,7 +52,7 @@ export default function TeamBoard() {
         setTeam({
           id: teamData.id,
           presentationDay: teamData.presentation_day,
-          members: members.map(m => ({
+          members: members.map((m: any) => ({
             id: m.id,
             name: m.name,
             position: m.position
@@ -80,6 +60,10 @@ export default function TeamBoard() {
         });
       } catch (err) {
         console.error('Error loading team:', err);
+        if (err instanceof Error && err.message.includes('404')) {
+          navigate('/create');
+          return;
+        }
         setError('Failed to load team data');
       } finally {
         setIsLoading(false);
@@ -93,13 +77,7 @@ export default function TeamBoard() {
     if (!team) return;
 
     try {
-      const { error } = await supabase
-        .from('teams')
-        .update({ presentation_day: day })
-        .eq('id', team.id);
-
-      if (error) throw error;
-
+      await apiClient.updateTeamPresentationDay(team.id, day);
       setTeam({ ...team, presentationDay: day });
     } catch (err) {
       console.error('Error updating presentation day:', err);
@@ -124,24 +102,10 @@ export default function TeamBoard() {
 
       if (!member1 || !member2) return;
 
-      const { error } = await supabase
-        .from('team_members')
-        .upsert([
-          { 
-            id: member1.id, 
-            team_id: team.id, 
-            name: member1.name,
-            position: member2.position 
-          },
-          { 
-            id: member2.id, 
-            team_id: team.id,
-            name: member2.name,
-            position: member1.position 
-          }
-        ]);
-
-      if (error) throw error;
+      await apiClient.bulkUpdateMemberPositions([
+        { id: member1.id, position: member2.position },
+        { id: member2.id, position: member1.position }
+      ]);
 
       const newMembers = [...team.members];
       const index1 = team.members.findIndex(m => m.id === selectedForSwap);
@@ -162,24 +126,14 @@ export default function TeamBoard() {
     if (!team || !newPresenterName.trim()) return;
 
     try {
-      const { data, error } = await supabase
-        .from('team_members')
-        .insert({
-          team_id: team.id,
-          name: newPresenterName.trim(),
-          position: team.members.length
-        })
-        .select()
-        .single();
-
-      if (error) throw error;
+      const newMember = await apiClient.createTeamMember(team.id, newPresenterName.trim(), team.members.length);
 
       setTeam({
         ...team,
         members: [...team.members, {
-          id: data.id,
-          name: data.name,
-          position: data.position
+          id: newMember.id,
+          name: newMember.name,
+          position: newMember.position
         }]
       });
       setNewPresenterName('');
@@ -205,28 +159,19 @@ export default function TeamBoard() {
     }
 
     try {
-      const { error } = await supabase
-        .from('team_members')
-        .delete()
-        .eq('id', id);
-
-      if (error) throw error;
+      await apiClient.deleteTeamMember(id);
 
       const newMembers = team.members
         .filter(m => m.id !== id)
         .map((m, idx) => ({ ...m, position: idx }));
 
       // Update positions for remaining members
-      await supabase
-        .from('team_members')
-        .upsert(
-          newMembers.map(m => ({
-            id: m.id,
-            team_id: team.id,
-            name: m.name,
-            position: m.position
-          }))
-        );
+      await apiClient.bulkUpdateMemberPositions(
+        newMembers.map(m => ({
+          id: m.id,
+          position: m.position
+        }))
+      );
 
       setTeam({ ...team, members: newMembers });
     } catch (err) {

@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Plus, X, Save } from 'lucide-react';
 import type { DayOfWeek, Presenter } from '../types';
-import { supabase } from '../lib/supabase';
+import { apiClient } from '../lib/api';
 
 const daysOfWeek: { value: DayOfWeek; label: string }[] = [
   { value: 0, label: 'Sunday' },
@@ -60,25 +60,9 @@ export default function CreateTeam() {
 
     setIsCreating(true);
     try {
-      const { data: team, error: teamError } = await supabase
-        .from('teams')
-        .insert([{ presentation_day: presentationDay }])
-        .select()
-        .single();
-
-      if (teamError) throw teamError;
-
-      const { error: membersError } = await supabase
-        .from('team_members')
-        .insert(
-          presenters.map(p => ({
-            team_id: team.id,
-            name: p.name,
-            position: p.position
-          }))
-        );
-
-      if (membersError) throw membersError;
+      const team = await apiClient.createTeam(presentationDay);
+      
+      await apiClient.createTeamMembers(team.id, presenters);
 
       navigate(`/team/${team.id}`);
     } catch (error) {
