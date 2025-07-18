@@ -14,6 +14,10 @@ RUN npm run build
 FROM node:22-alpine AS runtime
 WORKDIR /app
 
+# Set environment variables
+ENV NODE_ENV=production
+ENV DATABASE_PATH=/app/data/database.sqlite
+
 # Install wget for healthcheck
 RUN apk add --no-cache wget
 
@@ -25,7 +29,7 @@ COPY ./package.json /app/
 COPY --from=build /app/dist /app/dist
 
 # Install only production dependencies
-RUN npm ci --production
+RUN npm ci
 
 # Create directory for SQLite database
 RUN mkdir -p /app/data
@@ -33,9 +37,6 @@ RUN mkdir -p /app/data
 # Expose the API port
 EXPOSE 3001
 
-# Set environment variables
-ENV NODE_ENV=production
-ENV DATABASE_PATH=/app/data/database.sqlite
 
 # Start the server
 CMD ["node", "server/index.js"]
